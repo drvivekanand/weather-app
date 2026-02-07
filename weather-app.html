@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guru Weather App</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #00feba, #5b548a);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        
+        .card {
+            background: white;
+            padding: 2em;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            width: 300px;
+        }
+
+        h2 { margin-top: 0; color: #333; }
+
+        .search {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            flex: 1; /* यह इनपुट को ज्यादा जगह देगा */
+            outline: none;
+        }
+
+        button {
+            padding: 10px 15px;
+            background: #ebff87;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+
+        button:hover { background: #dceb6c; }
+
+        .weather {
+            display: none; /* शुरू में इसे छिपा कर रखेंगे */
+        }
+
+        .temp {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .city {
+            font-size: 1.5em;
+            color: #666;
+        }
+        
+        .humidity {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .error {
+            color: red;
+            display: none;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>🌤️ मौसम विभाग</h2>
+        
+        <div class="search">
+            <input type="text" id="cityInput" placeholder="शहर का नाम लिखें...">
+            <button id="searchBtn">🔍</button>
+        </div>
+
+        <p class="error" id="errorMsg">शहर नहीं मिला! ❌</p>
+
+        <div class="weather" id="weatherBox">
+            <img src="https://cdn-icons-png.flaticon.com/512/869/869869.png" width="100px" id="weatherIcon">
+            <h1 class="temp" id="temp">22°C</h1>
+            <h2 class="city" id="cityName">New Delhi</h2>
+            
+            <div class="details">
+                <p class="humidity">नमी (Humidity): <span id="humidity">50%</span></p>
+                <p class="wind">हवा (Wind): <span id="wind">15 km/h</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        <script>
+    // 1. अपनी चाबी और URL सेट करें
+    const apiKey = "30eae1d041f2c76ecdfabe15c015b7a3"; // आपकी की
+    const apiUrl = "https://api.openweathermap.org/data/2.5/weather?units=metric&q=";
+
+    // 2. HTML से सारे तार (Elements) जोड़ लें
+    const searchBox = document.getElementById("cityInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const weatherIcon = document.getElementById("weatherIcon");
+    
+    // 3. मुख्य फंक्शन (Async/Await वाला)
+    async function checkWeather(city) {
+        
+        // सुरक्षा कवच (Try-Catch)
+        try {
+            // "इंतजार करो" - डेटा लाओ
+            const response = await fetch(apiUrl + city + `&appid=${apiKey}`);
+
+            // अगर शहर नहीं मिला (404 Error)
+            if (response.status == 404) {
+                document.querySelector(".error").style.display = "block";
+                document.querySelector(".weather").style.display = "none";
+                return; // आगे मत बढ़ो, यहीं रुक जाओ
+            }
+
+            // पार्सल खोलो (JSON)
+            var data = await response.json();
+
+            // --- 4. स्क्रीन अपडेट करें (DOM Manipulation) ---
+            document.getElementById("cityName").innerText = data.name;
+            document.getElementById("temp").innerText = Math.round(data.main.temp) + "°C";
+            document.getElementById("humidity").innerText = data.main.humidity + "%";
+            document.getElementById("wind").innerText = data.wind.speed + " km/h";
+
+            // --- 5. मौसम के हिसाब से फोटो बदलें (Bonus) ---
+            // (API हमें 'Clear', 'Clouds', 'Rain' जैसे शब्द देता है)
+            if (data.weather[0].main == "Clouds") {
+                weatherIcon.src = "https://cdn-icons-png.flaticon.com/512/1163/1163624.png";
+            } 
+            else if (data.weather[0].main == "Clear") {
+                weatherIcon.src = "https://cdn-icons-png.flaticon.com/512/869/869869.png";
+            }
+            else if (data.weather[0].main == "Rain") {
+                weatherIcon.src = "https://cdn-icons-png.flaticon.com/512/1163/1163657.png";
+            }
+            else if (data.weather[0].main == "Drizzle") {
+                weatherIcon.src = "https://cdn-icons-png.flaticon.com/512/1163/1163657.png";
+            }
+            else if (data.weather[0].main == "Mist") {
+                weatherIcon.src = "https://cdn-icons-png.flaticon.com/512/4005/4005901.png";
+            }
+
+            // सब सही है, तो मौसम दिखाओ और एरर छिपाओ
+            document.querySelector(".weather").style.display = "block";
+            document.querySelector(".error").style.display = "none";
+
+        } catch (error) {
+            console.log("Error:", error);
+        }
+    }
+
+    // 6. बटन दबाने पर फंक्शन चलाओ
+    searchBtn.addEventListener("click", () => {
+        checkWeather(searchBox.value);
+    });
+
+</script>
+    </script>
+</body>
+</html>
